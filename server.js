@@ -1,9 +1,23 @@
 const express = require('express');
 const path = require('path');
+const GoogleSheetsService = require('./googleSheets');
+
+// Load environment variables (for local development)
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    console.log('⚠️  dotenv not installed - using system environment variables');
+  }
+}
+
 const app = express();
 
 // Get port from environment variable (Railway will set this) or use 3000 for local
 const PORT = process.env.PORT || 3000;
+
+// Initialize Google Sheets service
+const googleSheets = new GoogleSheetsService();
 
 // Middleware
 app.use(express.json());
@@ -37,7 +51,7 @@ app.get('/health', (req, res) => {
 // ==========================================================
 
 // Store lead data
-app.post('/api/leads', (req, res) => {
+app.post('/api/leads', async (req, res) => {
   try {
     const leadData = {
       id: Date.now(),
@@ -52,6 +66,15 @@ app.post('/api/leads', (req, res) => {
       source: leadData.utm_source || 'direct',
       campaign: leadData.utm_campaign || 'none'
     });
+    
+    // Automatically append to Google Sheets
+    try {
+      await googleSheets.appendLead(leadData);
+      console.log('✅ Lead synced to Google Sheets');
+    } catch (sheetError) {
+      console.error('⚠️ Failed to sync to Google Sheets:', sheetError.message);
+      // Don't fail the request if Google Sheets sync fails
+    }
     
     res.json({ success: true, id: leadData.id });
   } catch (error) {
@@ -148,11 +171,48 @@ app.get('/api/leads/export', (req, res) => {
   res.send(csv);
 });
 
+// ==========================================================
+// GOOGLE SHEETS ADMIN ENDPOINTS
+// ==========================================================
+
+// Setup Google Sheets headers (run once)
+app.post('/api/sheets/setup', async (req, res) => {
+  try {
+    await googleSheets.setupHeaders();
+    res.json({ success: true, message: 'Headers setup successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Test Google Sheets connection
+app.get('/api/sheets/test', async (req, res) => {
+  try {
+    const connected = await googleSheets.testConnection();
+    res.json({ success: connected, message: connected ? 'Connected' : 'Failed to connect' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🚀 Server is running on port ${PORT}`);
   console.log(`📝 Form: http://localhost:${PORT}`);
   console.log(`📊 Analytics: http://localhost:${PORT}/analytics`);
   console.log(`🧪 Test Tracking: http://localhost:${PORT}/test`);
-  console.log(`🔗 API: http://localhost:${PORT}/api/leads\n`);
+  console.log(`🔗 API: http://localhost:${PORT}/api/leads`);
+  
+  // Test Google Sheets connection on startup
+  if (process.env.GOOGLE_CLIENT_ID) {
+    console.log(`\n📊 Testing Google Sheets connection...`);
+    const connected = await googleSheets.testConnection();
+    if (connected) {
+      console.log(`✅ Google Sheets ready for automatic sync\n`);
+    } else {
+      console.log(`⚠️  Google Sheets not configured. Set environment variables to enable.\n`);
+    }
+  } else {
+    console.log(`\n⚠️  Google Sheets integration disabled. Set environment variables to enable.\n`);
+  }
 });
