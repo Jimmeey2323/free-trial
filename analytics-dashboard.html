@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Source Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Play', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            color: #333;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        .section-title {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-google {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .badge-facebook {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .badge-instagram {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+        
+        .badge-organic {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .badge-direct {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .export-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Play', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: background 0.2s;
+        }
+        
+        .export-btn:hover {
+            background: #5568d3;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        select, input {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-family: 'Play', sans-serif;
+            font-size: 14px;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Lead Source Analytics</h1>
+            <p class="subtitle">Track campaign performance and ad attribution in real-time</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Leads</div>
+                <div class="stat-value" id="total-leads">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Google Ads</div>
+                <div class="stat-value" id="google-leads">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Facebook/Instagram</div>
+                <div class="stat-value" id="meta-leads">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Organic</div>
+                <div class="stat-value" id="organic-leads">0</div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <h2 class="section-title">Lead Details by Campaign</h2>
+            
+            <div class="filter-controls">
+                <select id="source-filter">
+                    <option value="">All Sources</option>
+                    <option value="google">Google</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="organic">Organic</option>
+                    <option value="direct">Direct</option>
+                </select>
+                
+                <select id="medium-filter">
+                    <option value="">All Mediums</option>
+                    <option value="cpc">CPC</option>
+                    <option value="paid_social">Paid Social</option>
+                    <option value="organic">Organic</option>
+                </select>
+                
+                <input type="date" id="date-from" placeholder="From Date">
+                <input type="date" id="date-to" placeholder="To Date">
+                
+                <button class="export-btn" onclick="exportToCSV()">📊 Export CSV</button>
+                <button class="export-btn" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                Loading data...
+            </div>
+            
+            <div id="no-data" class="no-data" style="display: none;">
+                No leads data available yet. Connect to your data source to see analytics.
+            </div>
+            
+            <table id="leads-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Source</th>
+                        <th>Medium</th>
+                        <th>Campaign</th>
+                        <th>Content</th>
+                        <th>Click ID</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody id="leads-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // ==========================================================
+        // SAMPLE DATA STRUCTURE
+        // This is how your lead data should be formatted
+        // ==========================================================
+        const sampleLeads = [
+            {
+                timestamp: '2024-12-01T10:30:00',
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'john.doe@example.com',
+                phoneNumber: '+919876543210',
+                utm_source: 'google',
+                utm_medium: 'cpc',
+                utm_campaign: 'december_trial_campaign',
+                utm_content: 'headline_a',
+                utm_term: 'yoga classes mumbai',
+                gclid: 'Cj0KCQiA...',
+                fbclid: '',
+                center: 'Supreme Headquarters, Bandra',
+                landing_page: 'https://your-form.com?utm_source=google&utm_medium=cpc',
+                referrer: 'https://google.com'
+            },
+            {
+                timestamp: '2024-12-01T14:15:00',
+                firstName: 'Jane',
+                lastName: 'Smith',
+                email: 'jane.smith@example.com',
+                phoneNumber: '+918765432109',
+                utm_source: 'facebook',
+                utm_medium: 'paid_social',
+                utm_campaign: 'instagram_story_december',
+                utm_content: 'video_carousel',
+                utm_term: '',
+                gclid: '',
+                fbclid: 'IwAR2x...',
+                center: 'Kwality House, Kemps Corner',
+                landing_page: 'https://your-form.com?utm_source=facebook&utm_medium=paid_social',
+                referrer: 'https://facebook.com'
+            }
+        ];
+        
+        // ==========================================================
+        // DATA MANAGEMENT
+        // ==========================================================
+        let leadsData = [];
+        
+        // Function to load data from your backend/API
+        async function loadLeadsData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('no-data').style.display = 'none';
+            
+            try {
+                // Fetch from your API
+                const response = await fetch('/api/leads');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch leads');
+                }
+                
+                leadsData = await response.json();
+                
+                if (leadsData.length === 0) {
+                    document.getElementById('no-data').style.display = 'block';
+                    document.getElementById('leads-table').style.display = 'none';
+                } else {
+                    renderDashboard();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                
+                // Show sample data for demo purposes
+                leadsData = sampleLeads;
+                if (leadsData.length > 0) {
+                    renderDashboard();
+                } else {
+                    document.getElementById('no-data').style.display = 'block';
+                }
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // ==========================================================
+        // RENDERING FUNCTIONS
+        // ==========================================================
+        function renderDashboard() {
+            updateStats();
+            renderLeadsTable();
+            document.getElementById('leads-table').style.display = 'table';
+        }
+        
+        function updateStats() {
+            const total = leadsData.length;
+            const google = leadsData.filter(l => l.utm_source?.toLowerCase().includes('google') || l.gclid).length;
+            const meta = leadsData.filter(l => 
+                l.utm_source?.toLowerCase().includes('facebook') || 
+                l.utm_source?.toLowerCase().includes('instagram') || 
+                l.fbclid
+            ).length;
+            const organic = leadsData.filter(l => 
+                !l.utm_source || 
+                l.utm_medium?.toLowerCase() === 'organic'
+            ).length;
+            
+            document.getElementById('total-leads').textContent = total;
+            document.getElementById('google-leads').textContent = google;
+            document.getElementById('meta-leads').textContent = meta;
+            document.getElementById('organic-leads').textContent = organic;
+        }
+        
+        function renderLeadsTable() {
+            const tbody = document.getElementById('leads-tbody');
+            tbody.innerHTML = '';
+            
+            const filteredLeads = applyFilters();
+            
+            filteredLeads.forEach(lead => {
+                const row = document.createElement('tr');
+                
+                const source = lead.utm_source || 'direct';
+                const badgeClass = getBadgeClass(source);
+                
+                row.innerHTML = `
+                    <td>${formatDate(lead.timestamp)}</td>
+                    <td>${lead.firstName} ${lead.lastName}</td>
+                    <td>${lead.email}</td>
+                    <td>${lead.phoneNumber}</td>
+                    <td><span class="badge ${badgeClass}">${source}</span></td>
+                    <td>${lead.utm_medium || '-'}</td>
+                    <td>${lead.utm_campaign || '-'}</td>
+                    <td>${lead.utm_content || '-'}</td>
+                    <td>${lead.gclid || lead.fbclid || lead.msclkid || '-'}</td>
+                    <td>${lead.center || '-'}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // ==========================================================
+        // HELPER FUNCTIONS
+        // ==========================================================
+        function getBadgeClass(source) {
+            const s = source.toLowerCase();
+            if (s.includes('google')) return 'badge-google';
+            if (s.includes('facebook')) return 'badge-facebook';
+            if (s.includes('instagram')) return 'badge-instagram';
+            if (s === 'organic') return 'badge-organic';
+            return 'badge-direct';
+        }
+        
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function applyFilters() {
+            let filtered = [...leadsData];
+            
+            const sourceFilter = document.getElementById('source-filter').value;
+            const mediumFilter = document.getElementById('medium-filter').value;
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            
+            if (sourceFilter) {
+                filtered = filtered.filter(l => 
+                    l.utm_source?.toLowerCase().includes(sourceFilter.toLowerCase())
+                );
+            }
+            
+            if (mediumFilter) {
+                filtered = filtered.filter(l => 
+                    l.utm_medium?.toLowerCase() === mediumFilter.toLowerCase()
+                );
+            }
+            
+            if (dateFrom) {
+                filtered = filtered.filter(l => 
+                    new Date(l.timestamp) >= new Date(dateFrom)
+                );
+            }
+            
+            if (dateTo) {
+                filtered = filtered.filter(l => 
+                    new Date(l.timestamp) <= new Date(dateTo + 'T23:59:59')
+                );
+            }
+            
+            return filtered;
+        }
+        
+        function refreshData() {
+            loadLeadsData();
+        }
+        
+        function exportToCSV() {
+            const filtered = applyFilters();
+            
+            // CSV Headers
+            const headers = [
+                'Date', 'First Name', 'Last Name', 'Email', 'Phone', 
+                'UTM Source', 'UTM Medium', 'UTM Campaign', 'UTM Content', 'UTM Term',
+                'Google Click ID', 'Facebook Click ID', 'Studio Location', 'Landing Page', 'Referrer'
+            ];
+            
+            // CSV Rows
+            const rows = filtered.map(lead => [
+                formatDate(lead.timestamp),
+                lead.firstName,
+                lead.lastName,
+                lead.email,
+                lead.phoneNumber,
+                lead.utm_source || '',
+                lead.utm_medium || '',
+                lead.utm_campaign || '',
+                lead.utm_content || '',
+                lead.utm_term || '',
+                lead.gclid || '',
+                lead.fbclid || '',
+                lead.center || '',
+                lead.landing_page || '',
+                lead.referrer || ''
+            ]);
+            
+            // Create CSV content
+            let csvContent = headers.join(',') + '\n';
+            rows.forEach(row => {
+                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+            
+            // Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // ==========================================================
+        // EVENT LISTENERS
+        // ==========================================================
+        document.getElementById('source-filter').addEventListener('change', renderLeadsTable);
+        document.getElementById('medium-filter').addEventListener('change', renderLeadsTable);
+        document.getElementById('date-from').addEventListener('change', renderLeadsTable);
+        document.getElementById('date-to').addEventListener('change', renderLeadsTable);
+        
+        // Load data on page load
+        loadLeadsData();
+    </script>
+</body>
+</html>

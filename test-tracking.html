@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Campaign Tracking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #667eea; margin-top: 0; }
+        .test-url {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #5568d3; }
+        .result {
+            background: #e8f5e9;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .code {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .badge-success { background: #e8f5e9; color: #2e7d32; }
+        .badge-info { background: #e3f2fd; color: #1565c0; }
+        .badge-warning { background: #fff3e0; color: #e65100; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Campaign Tracking Test Page</h1>
+    
+    <div class="section">
+        <h2>Current Page UTM Parameters</h2>
+        <div id="current-params">
+            <p>Checking URL parameters...</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Test Different Campaign Scenarios</h2>
+        
+        <h3>Google Ads Campaign</h3>
+        <div class="test-url" id="google-url"></div>
+        <button onclick="testGoogle()">Test Google Campaign</button>
+        
+        <h3>Facebook/Instagram Campaign</h3>
+        <div class="test-url" id="facebook-url"></div>
+        <button onclick="testFacebook()">Test Facebook Campaign</button>
+        
+        <h3>Instagram Stories Campaign</h3>
+        <div class="test-url" id="instagram-url"></div>
+        <button onclick="testInstagram()">Test Instagram Campaign</button>
+        
+        <h3>Multiple Ad Variants Test</h3>
+        <button onclick="testVariantA()">Test Headline A</button>
+        <button onclick="testVariantB()">Test Headline B</button>
+        <button onclick="testVideo()">Test Video Ad</button>
+    </div>
+
+    <div class="section">
+        <h2>API Testing</h2>
+        <button onclick="fetchAllLeads()">Get All Leads</button>
+        <button onclick="fetchCampaignStats()">Get Campaign Stats</button>
+        <button onclick="fetchGoogleLeads()">Get Google Leads Only</button>
+        <button onclick="exportCSV()">Download CSV</button>
+        <div class="result" id="api-result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Sample API Response</h2>
+        <p>This is what each lead data looks like:</p>
+        <div class="code" id="sample-data"></div>
+    </div>
+
+    <div class="section">
+        <h2>Integration Code Examples</h2>
+        
+        <h3>JavaScript Fetch Example</h3>
+        <div class="code">
+// Get all leads
+fetch('/api/leads')
+  .then(response => response.json())
+  .then(data => console.log(data));
+
+// Get campaign statistics
+fetch('/api/campaigns/stats')
+  .then(response => response.json())
+  .then(stats => {
+    stats.forEach(campaign => {
+      console.log(`${campaign.campaign}: ${campaign.count} leads`);
+    });
+  });
+        </div>
+
+        <h3>Python Example</h3>
+        <div class="code">
+import requests
+
+# Get all leads
+response = requests.get('https://your-app.up.railway.app/api/leads')
+leads = response.json()
+
+# Filter by source
+google_leads = [l for l in leads if l['utm_source'] == 'google']
+print(f"Google leads: {len(google_leads)}")
+        </div>
+    </div>
+
+    <script>
+        // Get current URL parameters
+        function displayCurrentParams() {
+            const params = new URLSearchParams(window.location.search);
+            const container = document.getElementById('current-params');
+            
+            const utmParams = {
+                utm_source: params.get('utm_source'),
+                utm_medium: params.get('utm_medium'),
+                utm_campaign: params.get('utm_campaign'),
+                utm_content: params.get('utm_content'),
+                utm_term: params.get('utm_term'),
+                gclid: params.get('gclid'),
+                fbclid: params.get('fbclid')
+            };
+            
+            const hasParams = Object.values(utmParams).some(v => v);
+            
+            if (hasParams) {
+                let html = '<div style="background: #e8f5e9; padding: 15px; border-radius: 5px;">';
+                html += '<strong>✅ UTM Parameters Detected:</strong><br><br>';
+                Object.entries(utmParams).forEach(([key, value]) => {
+                    if (value) {
+                        html += `<span class="badge badge-success">${key}</span> = <strong>${value}</strong><br>`;
+                    }
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color: #666;">No UTM parameters in current URL. Click a test button below to simulate campaign tracking.</p>';
+            }
+        }
+
+        // Generate test URLs
+        const baseUrl = window.location.origin + window.location.pathname;
+        
+        const googleUrl = baseUrl + '?utm_source=google&utm_medium=cpc&utm_campaign=december_trial_2024&utm_content=headline_a&utm_term=yoga+classes+mumbai&gclid=test_gclid_123';
+        const facebookUrl = baseUrl + '?utm_source=facebook&utm_medium=paid_social&utm_campaign=facebook_trial_december&utm_content=carousel_ad&fbclid=test_fbclid_456';
+        const instagramUrl = baseUrl + '?utm_source=instagram&utm_medium=paid_social&utm_campaign=instagram_stories_december&utm_content=video_story';
+        
+        document.getElementById('google-url').textContent = googleUrl;
+        document.getElementById('facebook-url').textContent = facebookUrl;
+        document.getElementById('instagram-url').textContent = instagramUrl;
+
+        // Test functions
+        function testGoogle() {
+            window.location.href = googleUrl;
+        }
+
+        function testFacebook() {
+            window.location.href = facebookUrl;
+        }
+
+        function testInstagram() {
+            window.location.href = instagramUrl;
+        }
+
+        function testVariantA() {
+            window.location.href = baseUrl + '?utm_source=google&utm_medium=cpc&utm_campaign=ab_test_december&utm_content=headline_a';
+        }
+
+        function testVariantB() {
+            window.location.href = baseUrl + '?utm_source=google&utm_medium=cpc&utm_campaign=ab_test_december&utm_content=headline_b';
+        }
+
+        function testVideo() {
+            window.location.href = baseUrl + '?utm_source=facebook&utm_medium=paid_social&utm_campaign=ab_test_december&utm_content=video_ad';
+        }
+
+        // API functions
+        async function fetchAllLeads() {
+            const result = document.getElementById('api-result');
+            result.style.display = 'block';
+            result.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch('/api/leads');
+                const data = await response.json();
+                result.innerHTML = `<strong>✅ Success!</strong><br>Total Leads: ${data.length}<br><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function fetchCampaignStats() {
+            const result = document.getElementById('api-result');
+            result.style.display = 'block';
+            result.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch('/api/campaigns/stats');
+                const data = await response.json();
+                
+                let html = '<strong>✅ Campaign Statistics:</strong><br><br>';
+                data.forEach(campaign => {
+                    html += `<div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">`;
+                    html += `<strong>${campaign.campaign}</strong><br>`;
+                    html += `Source: ${campaign.source} | Medium: ${campaign.medium}<br>`;
+                    html += `Leads: <strong>${campaign.count}</strong>`;
+                    html += `</div>`;
+                });
+                result.innerHTML = html;
+            } catch (error) {
+                result.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function fetchGoogleLeads() {
+            const result = document.getElementById('api-result');
+            result.style.display = 'block';
+            result.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch('/api/leads/source/google');
+                const data = await response.json();
+                result.innerHTML = `<strong>✅ Google Leads:</strong><br>Total: ${data.length}<br><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            }
+        }
+
+        function exportCSV() {
+            window.location.href = '/api/leads/export';
+        }
+
+        // Display sample data
+        const sampleData = {
+            "id": 1733068800000,
+            "timestamp": "2024-12-01T14:30:00.000Z",
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john@example.com",
+            "phoneNumber": "+919876543210",
+            "center": "Supreme Headquarters, Bandra",
+            "active": "Yes",
+            "utm_source": "google",
+            "utm_medium": "cpc",
+            "utm_campaign": "december_trial_2024",
+            "utm_content": "headline_a",
+            "utm_term": "yoga classes mumbai",
+            "gclid": "Cj0KCQiA...",
+            "fbclid": "",
+            "landing_page": "https://your-app.up.railway.app?utm_source=google&utm_medium=cpc...",
+            "referrer": "https://google.com"
+        };
+
+        document.getElementById('sample-data').textContent = JSON.stringify(sampleData, null, 2);
+
+        // Initialize
+        displayCurrentParams();
+    </script>
+</body>
+</html>

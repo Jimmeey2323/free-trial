@@ -1,0 +1,18 @@
+{
+  "name": "trial-form",
+  "version": "1.0.0",
+  "description": "Trial form with UTM tracking for Physique 57",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["form", "utm", "tracking"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
